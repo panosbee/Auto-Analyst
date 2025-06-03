@@ -1,119 +1,160 @@
+# Auto-Analyst 2.0  
+AI-driven multi-agent analytics platform
 
+![Auto-Analyst banner](images/Auto-Analyst%20Banner.png)
 
-# Auto-Analyst 
+Auto-Analyst turns raw CSV/Excel data into executive-ready insights with **one conversation**.  
+Version 2.0 introduces a brand-new _enhanced agent system_, deep KPI generation, automated data-quality profiling and a cleaned, production-ready codebase.
 
+---
 
+## ✨ What’s new in 2.0
+| Area | Upgrade |
+|------|---------|
+| 🧠 Agent Engine | 7 advanced agents (Statistical, ML, KPI, Quality, Viz, Excel, Coordinator) built on **DSPy**. |
+| 📊 Analytics Depth | ARIMA/SARIMAX, seasonal decomposition, hypothesis tests, automatic feature engineering, hyper-parameter tuning, DBSCAN outlier detection. |
+| 📈 Visualisations | Interactive Plotly dashboards, correlation networks, Pareto & KPI cards, PCA plots for clustering. |
+| 📋 KPI Generator | Auto-detects finance/sales/operational columns → outputs ready-to-use metric cards (Total, CAGR, ROAS, etc.). |
+| 🧹 Data Quality | Full profiling (missing-values heatmaps, duplicate scan, cardinality, VIF, normality, quality score). |
+| 📂 Excel Integration | Multi-sheet overview, relationship inference, merge suggestions. |
+| 🗂️ Clean Repo | React prototype removed, logic moved to `src/`, docs to `docs/`. Streamlit + Flask remain. |
 
-![auto-analyst logo.png](https://github.com/ArslanS1997/Auto-Analyst/blob/main/images/auto-analyst%20logo.png)
+---
 
+## 🔧 Installation
 
-
-
-## Description
-
-**Auto-Analyst** is an AI-driven data analytics agentic system designed to simplify and enhance the data science process. By integrating various specialized AI agents, this tool aims to make complex data analysis tasks more accessible and efficient for data analysts and scientists. Auto-Analyst provides a streamlined approach to data preprocessing, statistical analysis, machine learning, and visualization, all within an interactive Streamlit interface.
-
-![UI Banner](https://github.com/ArslanS1997/Auto-Analyst/blob/main/images/Auto-Analyst%20Banner.png)
-
-### Key Features:
-
-1. **Plug and Play Streamlit UI**: 
-   - An intuitive and interactive web interface powered by Streamlit that makes it easy to use and visualize data without extensive setup.
-
-2. **Agents with Data Science Speciality**:
-   - **Data Visualization Agent**: Generates a wide range of Plotly charts and visualizations.
-   - **Statistical Analytics Agent**: Performs comprehensive statistical analyses and generates descriptive statistics.
-   - **Scikit-Learn Agent**: Integrates with Scikit-Learn to build and evaluate machine learning models.
-   - **Preprocessing Agent**: Handles data cleaning, transformation, and preparation tasks.
-
-3. **Completely Automated, LLM Agnostic**:
-   - The system operates with full automation and is agnostic to large language models (LLMs), making it adaptable to various AI models and technologies.
-
-4. **Built Using Lightweight Frameworks**:
-   - Constructed with efficient frameworks like DSPy, ensuring a lightweight and responsive application.
-
-## How to Run Locally
-
-To run the Streamlit app locally, follow these steps:
-
-### 1. Clone the Repository
-
-First, clone the repository to your local machine using Git:
-
+### 1. Clone & set up
 ```bash
-git clone https://github.com/ArslanS1997/Auto-Analyst.git
-cd your-repository
-```
-
-### 2. Install Dependencies
-
-Create a virtual environment and install the required Python packages. The required packages are listed in the `requirements.txt` file. Make sure you have `pip` installed, and then run:
-
-```bash
+git clone https://github.com/<your-org>/auto-analyst.git
+cd auto-analyst
 python -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+source venv/bin/activate         # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Set Up Environment Variables
-
-You need to set up the `OPENAI_API_KEY` environment variable for the app to function. You can do this by adding the following line to your `.env` file or by exporting the variable in your terminal:
-
-#### Using `.env` file:
-Create a file named `.env` in the root of your project and add:
-
-```plaintext
-OPENAI_API_KEY=your_openai_api_key_here
+### 2. Environment variables
+Create `.env`:
+```
+OPENAI_API_KEY=sk-********************************
+# optional
+GROQ_API_KEY=your_groq_key           # if you switch to Llama-3 via Groq
+DSPY_LLM_MODEL=gpt-4o-mini           # or gpt-4o, gpt-4-turbo, llama3-70b
 ```
 
-#### Exporting in Terminal:
+---
+
+## 🚀 Quick start
+
+### Streamlit workstation
 ```bash
-export OPENAI_API_KEY=your_openai_api_key_here
+streamlit run enhanced_streamlit_frontend.py
+```
+Upload a CSV or Excel, then chat:
+
+```
+Show sales trend and forecast next 6 months
+```
+or call an agent directly:
+
+```
+@DataQualityAgent profile the dataset
 ```
 
-Replace `your_openai_api_key_here` with your actual OpenAI API key.
-
-### 4. Run the Streamlit App
-
-Start the Streamlit app using the following command:
-
+### REST API (production)
 ```bash
-streamlit run new_frontend.py
+export OPENAI_API_KEY=...
+gunicorn -b 0.0.0.0:8000 flask_app.flask_app:app
+```
+```
+POST /chat
+{
+  "query": "Build a churn prediction model"
+}
 ```
 
+---
 
+## 🏗️ Architecture
 
-## Files in the System
+```
+┌────────────┐  HTTP / Websocket  ┌─────────────────────┐
+│  Frontend  │ ─────────────────▶ │  Flask REST API     │
+│ • Streamlit│                   │  (routes.py)        │
+└────────────┘                   └────────┬────────────┘
+                                          │
+                     planner / coordinator│
+                                          ▼
+                              ┌─────────────────────────┐
+                              │  Agent Engine (DSPy)    │
+                              │  • Planner             │
+                              │  • AgentCoordinator    │
+                              │  • 11 specialised agents│
+                              └────────┬────────────────┘
+                        context / embeddings│
+                                          ▼
+                         ┌────────────────────────┐
+                         │  Llama-Index Retrievers │
+                         │  • Data schema index   │
+                         │  • Plot styling index  │
+                         └────────────────────────┘
+```
 
-The project consists of several key files, each serving a distinct purpose:
+### Key folders
+```
+src/
+ ├─ agents.py                core & planner
+ ├─ enhanced_agents/         advanced capabilities
+ ├─ memory_agents.py         summaries & error logs
+ ├─ retrievers.py            schema + style indices
+flask_app/                   production API
+new_frontend.py              legacy Streamlit UI
+enhanced_streamlit_frontend.py (new UI)
+docs/                        design docs & HOW-TOs
+```
 
-1. **`agents.py`**:
-   - **Description**: Contains the definitions for various AI agents used in the system.
-   - **Key Agents**:
-     - `auto_analyst_ind`: Routes queries to the appropriate agent based on user input and provides a detailed response.
-     - `auto_analyst`: Integrates a planner agent for routing queries and a code combiner agent for synthesizing outputs from multiple agents.
-     - `memory_summarize_agent`: Summarizes agent responses and user queries.
-     - `error_memory_agent`: Creates summaries of code errors and their corrections.
+---
 
-2. **`memory_agents.py`**:
-   - **Description**: Defines agents that help summarize memory and errors.
-   - **Key Agents**:
-     - `memory_summarize_agent`: Provides summaries of agent responses and user goals.
-     - `error_memory_agent`: Analyzes and summarizes code errors and suggested corrections.
+## 🤖 Agent roster
 
-3. **`retrievers.py`**:
-   - **Description**: Contains functions and configurations for retrieving and processing data.
-   - **Key Functions**:
-     - `return_vals`: Collects useful information about data columns, such as statistics and top categories.
-     - `correct_num`: Cleans numeric columns by removing commas and converting to float.
-     - `make_data`: Pre-processes data and generates a description of the dataset.
-   - **Styling Instructions**: Provides instructions for styling Plotly charts for different types of visualizations, including line charts, bar charts, histograms, pie charts, and heat maps.
+| Agent | Purpose |
+|-------|---------|
+| **DataQualityAgent** | Profiling, cleaning recommendations, quality score |
+| **EnhancedStatisticalAgent** | Time-series, hypothesis tests, correlation network, anomaly detection |
+| **AdvancedMLAgent** | Auto feature engineering, model selection, CV & tuning |
+| **KPIGeneratorAgent** | Finance, sales & ops KPI cards + dashboards |
+| **AdvancedVisualizationAgent** | Multi-dimensional Plotly & dashboards |
+| **ExcelIntegrationAgent** | Multi-sheet merge, relationship mapping |
+| **AgentCoordinator** | Executes planner plan, merges code, resolves dependencies |
+| Core agents | Preprocessing, BasicStats, BasicML, BasicViz |
 
-4. **`new_frontend.py`**:
-   - **Description**: The main Streamlit script that runs the application and integrates all the agents and functionalities provided in the other files. 
+Agents share short-term memory and are orchestrated via **Planner-Doer** pattern.
 
+---
 
-## License
+## 🛠️ Customization
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+* Switch LLM: set `DSPY_LLM_MODEL` env or edit `enhanced_streamlit_frontend.py`.
+* Extend agents: add a new `Signature` under `src/enhanced_agents/`, then import in `__init__.py`.
+* Change vector DB: adjust `retrievers.py` to use your preferred store.
 
+---
+
+## 🧪 Testing
+```bash
+pytest tests/          # unit tests for agents & retrievers
+```
+CI pipeline (GitHub Actions) runs: lint ➜ unit ➜ integration (Streamlit & API).
+
+---
+
+## 🤝 Contributing
+
+1. Fork → new branch → PR  
+2. Follow Black / Ruff formatting (`ruff check .`, `ruff format .`)  
+3. Add/extend unit tests for new code  
+4. Describe enhancement in PR description
+
+---
+
+## 📄 License
+MIT © 2025 Your Company
